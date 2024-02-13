@@ -18,6 +18,6 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
-          docker build -t stormpijnenburg/docker-extra:latest .
+          docker build -t stormpijnenburg/docker-extra:${{ github.sha }} .
           docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-          docker push stormpijnenburg/docker-extra:latest
+          docker push stormpijnenburg/docker-extra:${{ github.sha }}
