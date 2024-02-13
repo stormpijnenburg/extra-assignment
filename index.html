@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Todo App</title>
+</head>
+<body>
+    <h1>Todo App 123</h1>
+    <form action="{{ url_for('add') }}" method="POST">
+        <input type="text" name="todo" placeholder="Add a todo">
+        <input type="submit" value="Add">
+    </form>
+    <ul>
+        {% for todo in todos %}
+        <li>
+            {{ todo.task }}
+            {% if todo.done %}
+                <span style="color: green;">(Done)</span>
+            {% else %}
+                <span style="color: red;">(Not Done)</span>
+            {% endif %}
+            <a href="{{ url_for('edit', id=todo.id) }}">Edit</a>
+            <a href="{{ url_for('check', id=todo.id) }}">Check</a>
+            <a href="{{ url_for('delete', id=todo.id) }}">Delete</a>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

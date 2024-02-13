@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Todo</title>
+</head>
+<body>
+    <h1>Edit Todo</h1>
+    <form action="{{ url_for('edit', id=todo.id) }}" method="post">
+        <input type="text" name="todo" value="{{ todo.task }}">
+        <input type="submit" value="Update">
+    </form>
+</body>
+</html>
