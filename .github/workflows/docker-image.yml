@@ -20,4 +20,4 @@ jobs:
         run: |
           docker build -t stormpijnenburg/docker-extra:latest .
           docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-          docker push stormpijnenburg/docker-extra:latest
+          docker push stormpijnenburg/docker-extra:${{ github.sha }}
