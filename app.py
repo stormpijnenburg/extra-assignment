@@ -80,4 +80,4 @@ class TodoListApp:
 
 if __name__ == "__main__":
     todo_list_app = TodoListApp(Config)
-    todo_list_app.run()
+    todo_list_app.app.run(host="0.0.0.0")

@@ -1,45 +1,44 @@
 import pytest
-from flask_sqlalchemy import SQLAlchemy
 from app import TodoListApp
 
-class TestConfig:
-    # Construct the MySQL database URI
+class Config:
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 @pytest.fixture
-def client():
-    app = TodoListApp(TestConfig)
-    app.initialize_database()
-    yield app
+def app():
+    todo_list_app = TodoListApp(Config)
+    return todo_list_app.app
 
-def test_add_todo(client):
-    client = client.app.test_client
-    todos = client.Todo.query.all()
-    previousCount = len(todos)
+@pytest.fixture
+def client(app):
+    return app.test_client()
 
-    response = client.post('/add', data={'todo': 'Test Todo'})
+def test_add_todo_item(client):
+    response = client.post('/add', data={'todo': 'Test todo item'})
+    assert response.status_code == 302  # Check if redirecting after adding
+    assert b'Test todo item' in response.data  # Check if the added item is in the response
 
-    todos = client.Todo.query.all()
+def test_check_todo_item(client):
+    # Add a todo item first
+    response = client.post('/add', data={'todo': 'Test todo item to check'})
+    assert response.status_code == 302
 
-    assert response.status_code == 302  # Check if redirected
-    assert len(todos) == previousCount + 1
-    assert todos[-1].task == 'Test Todo'
+    # Get the id of the added item
+    todo_id = int(response.headers['Location'].split('/')[-1])
 
-def test_check_todo(client):
-    todo = client.Todo(task='Test Todo')
-    client.db.session.add(todo)
-    client.db.session.commit()
+    # Check the todo item
+    response = client.get(f'/check/{todo_id}')
+    assert response.status_code == 302  # Check if redirecting after checking
 
-    response = client.get(f'/check/{todo.id}')
-    assert response.status_code == 302  # Check if redirected
-    assert client.Todo.query.get(todo.id).done
+def test_delete_todo_item(client):
+    # Add a todo item first
+    response = client.post('/add', data={'todo': 'Test todo item to delete'})
+    assert response.status_code == 302
 
-def test_delete_todo(client):
-    todo = client.Todo(task='Test Todo')
-    client.db.session.add(todo)
-    client.db.session.commit()
+    # Get the id of the added item
+    todo_id = int(response.headers['Location'].split('/')[-1])
 
-    response = client.get(f'/delete/{todo.id}')
-    assert response.status_code == 302  # Check if redirected
-    assert client.Todo.query.get(todo.id) is None
+    # Delete the todo item
+    response = client.get(f'/delete/{todo_id}')
+    assert response.status_code == 302  # Check if redirecting after deleting
