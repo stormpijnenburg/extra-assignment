@@ -1,71 +1,83 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 
-app = Flask(__name__, template_folder="./")
+class Config:
+    # Login credentials
+    mysql_username = 'dbi502384'
+    mysql_password = 'A2c37&ds$^7v'
+    mysql_hostname = 'studmysql01.fhict.local'
+    mysql_port = '3306'
+    mysql_database_name = 'dbi502384'
+    # Construct the MySQL database URI
+    SQLALCHEMY_DATABASE_URI = f"mysql://{mysql_username}:{mysql_password}@{mysql_hostname}:{mysql_port}/{mysql_database_name}"
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-# Login credentials
-mysql_username = 'dbi502384'
-mysql_password = 'A2c37&ds$^7v'
-mysql_hostname = 'studmysql01.fhict.local'
-mysql_port = '3306'
-mysql_database_name = 'dbi502384'
+class TodoListApp:
+    def __init__(self, Config):
+        self.app = Flask(__name__, template_folder="./")
+        self.app.config.from_object(Config)
+        self.db = SQLAlchemy(self.app)
 
-# Construct the MySQL database URI
-mysql_uri = f"mysql://{mysql_username}:{mysql_password}@{mysql_hostname}:{mysql_port}/{mysql_database_name}"
+        # Define the Todo model
+        class Todo(self.db.Model):
+            id = self.db.Column(self.db.Integer, primary_key=True)
+            task = self.db.Column(self.db.String(100))
+            done = self.db.Column(self.db.Boolean)
 
-# Set the SQLAlchemy configuration to use MySQL database
-app.config['SQLALCHEMY_DATABASE_URI'] = mysql_uri
+            def __init__(self, task, done=False):
+                self.task = task
+                self.done = done
 
-db = SQLAlchemy(app)
+        self.Todo = Todo
 
-class Todo(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    task = db.Column(db.String(100))
-    done = db.Column(db.Boolean)
+        # Routes
+        self.app.add_url_rule("/", view_func=self.index)
+        self.app.add_url_rule("/add", view_func=self.add, methods=["POST"])
+        self.app.add_url_rule("/edit/<int:id>", view_func=self.edit, methods=["GET", "POST"])
+        self.app.add_url_rule("/check/<int:id>", view_func=self.check)
+        self.app.add_url_rule("/delete/<int:id>", view_func=self.delete)
 
-    def __init__(self, task, done=False):
-        self.task = task
-        self.done = done
+    def index(self):
+        todos = self.Todo.query.all()
+        return render_template("index.html", todos=todos)
 
-@app.route("/")
-def index():
-    todos = Todo.query.all()
-    return render_template("index.html", todos=todos)
-
-@app.route("/add", methods=["POST"])
-def add():
-    todo = request.form['todo']
-    new_todo = Todo(todo)
-    db.session.add(new_todo)
-    db.session.commit()
-    return redirect(url_for("index"))
-
-@app.route("/edit/<int:id>", methods=["GET", "POST"])
-def edit(id):
-    todo = Todo.query.get(id)
-    if request.method == "POST":
-        new_task = request.form["todo"]
-        todo.task = new_task
-        db.session.commit()
+    def add(self):
+        todo = request.form['todo']
+        new_todo = self.Todo(todo)
+        self.db.session.add(new_todo)
+        self.db.session.commit()
         return redirect(url_for("index"))
-    else:
-        return render_template("edit.html", todo=todo)
 
-@app.route("/check/<int:id>")
-def check(id):
-    todo = Todo.query.get(id)
-    todo.done = not todo.done
-    db.session.commit()
-    return redirect(url_for("index"))
+    def edit(self, id):
+        todo = self.Todo.query.get(id)
+        if request.method == "POST":
+            new_task = request.form["todo"]
+            todo.task = new_task
+            self.db.session.commit()
+            return redirect(url_for("index"))
+        else:
+            return render_template("edit.html", todo=todo)
 
-@app.route("/delete/<int:id>")
-def delete(id):
-    todo = Todo.query.get(id)
-    db.session.delete(todo)
-    db.session.commit()
-    return redirect(url_for("index"))
+    def check(self, id):
+        todo = self.Todo.query.get(id)
+        todo.done = not todo.done
+        self.db.session.commit()
+        return redirect(url_for("index"))
+
+    def delete(self, id):
+        todo = self.Todo.query.get(id)
+        self.db.session.delete(todo)
+        self.db.session.commit()
+        return redirect(url_for("index"))
+
+    def initialize_database(self):
+        with self.app.app_context():
+            self.db.create_all()
+
+    def run(self):
+        self.initialize_database()
+        self.app.run(debug=True)
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-    app.run(debug=True)
+    todo_list_app = TodoListApp(Config)
+    todo_list_app.run()
