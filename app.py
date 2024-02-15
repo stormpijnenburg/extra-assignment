@@ -37,6 +37,9 @@ class TodoListApp:
         self.app.add_url_rule("/check/<int:id>", view_func=self.check)
         self.app.add_url_rule("/delete/<int:id>", view_func=self.delete)
 
+        with self.app.app_context():
+            self.db.create_all()
+
     def index(self):
         todos = self.Todo.query.all()
         return render_template("index.html", todos=todos)
@@ -69,14 +72,6 @@ class TodoListApp:
         self.db.session.delete(todo)
         self.db.session.commit()
         return redirect(url_for("index"))
-
-    def initialize_database(self):
-        with self.app.app_context():
-            self.db.create_all()
-
-    def run(self):
-        self.initialize_database()
-        self.app.run(debug=True)
 
 if __name__ == "__main__":
     todo_list_app = TodoListApp(Config)
